@@ -30,6 +30,24 @@
 #ifndef CEREAL_DETAILS_STATIC_OBJECT_HPP_
 #define CEREAL_DETAILS_STATIC_OBJECT_HPP_
 
+//! Prevent link optimization from removing non-referenced static objects
+/*! Especially for polymorphic support, we create static objects which
+    may not ever be explicitly referenced.  Most linkers will detect this
+    and remove the code causing various unpleasant runtime errors.  These
+    macros, adopted from Boost (see force_include.hpp) prevent this
+
+    (C) Copyright 2002 Robert Ramey - http://www.rrsd.com .
+    Use, modification and distribution is subject to the Boost Software
+    License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+    http://www.boost.org/LICENSE_1_0.txt) */
+#ifdef _MSC_VER
+#   define CEREAL_DLL_EXPORT __declspec(dllexport)
+#   define CEREAL_USED
+#else // clang or gcc
+#   define CEREAL_DLL_EXPORT
+#   define CEREAL_USED __attribute__ ((__used__))
+#endif
+
 namespace cereal
 {
   namespace detail
@@ -49,7 +67,7 @@ namespace cereal
         //! Forces instantiation at pre-execution time
         static void instantiate( T const & ) {}
 
-        static T & create()
+        CEREAL_DLL_EXPORT static T & create()
         {
           static T t;
           instantiate(instance);
@@ -59,16 +77,16 @@ namespace cereal
         StaticObject( StaticObject const & /*other*/ ) {}
 
       public:
-        static T & getInstance()
+        CEREAL_DLL_EXPORT static T & getInstance()
         {
           return create();
         }
 
       private:
-        static T & instance;
+        CEREAL_DLL_EXPORT static T & instance;
     };
 
-    template <class T> T & StaticObject<T>::instance = StaticObject<T>::create();
+    template <class T> CEREAL_DLL_EXPORT T & StaticObject<T>::instance = StaticObject<T>::create();
   } // namespace detail
 } // namespace cereal
 
